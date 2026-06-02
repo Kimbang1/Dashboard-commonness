@@ -9,18 +9,37 @@ function GridStat({ label, value, color }) {
   );
 }
 
-function ServiceCard({ svc, onOpen }) {
+function ServiceCard({ svc, onOpen, onRemove }) {
   const st = STATUS[svc.status] || STATUS.healthy;
   const errColor = svc.errorRate >= 2 ? "var(--crit)" : svc.errorRate >= 0.5 ? "var(--warn)" : "var(--ok)";
+  const open = () => onOpen(svc.id);
+  const handleKey = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      open();
+    }
+  };
+  const remove = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onRemove(svc);
+  };
   return (
-    <button className={"wd-card wd-card--" + svc.status} onClick={() => onOpen(svc.id)}>
+    <div className={"wd-card wd-card--" + svc.status} onClick={open} onKeyDown={handleKey} role="button" tabIndex="0">
       <div className="wd-card-glow" style={{ background: st.color }} />
       <div className="wd-card-head">
         <div className="wd-card-id">
           <StatusDot status={svc.status} size={9} pulse={svc.status !== "healthy"} />
           <span className="wd-card-name wd-mono">{svc.name}</span>
         </div>
-        <span className="wd-card-status wd-label" style={{ color: st.color }}>{st.label}</span>
+        <div className="wd-card-actions">
+          <span className="wd-card-status wd-label" style={{ color: st.color }}>{st.label}</span>
+          <button className="wd-card-delete" onClick={remove} title="Remove service" aria-label={"Remove " + svc.name}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="wd-card-repo wd-mono">
@@ -48,11 +67,11 @@ function ServiceCard({ svc, onOpen }) {
           {svc.newFeedback > 0 && <span className="wd-chip"><span className="wd-chip-dot" style={{ background: "var(--warn)" }} />{svc.newFeedback} VOC</span>}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
-function ServiceGrid({ services, onOpen, query, setQuery, filter, setFilter }) {
+function ServiceGrid({ services, onOpen, onRemove, query, setQuery, filter, setFilter }) {
   const counts = { all: services.length, critical: 0, warning: 0, healthy: 0 };
   services.forEach((s) => {
     if (s.status === "critical") counts.critical++;
@@ -100,7 +119,7 @@ function ServiceGrid({ services, onOpen, query, setQuery, filter, setFilter }) {
       </div>
 
       <div className="wd-cards">
-        {shown.map((s) => <ServiceCard key={s.id} svc={s} onOpen={onOpen} />)}
+        {shown.map((s) => <ServiceCard key={s.id} svc={s} onOpen={onOpen} onRemove={onRemove} />)}
         {!shown.length && <div className="wd-empty wd-mono">// 일치하는 서비스가 없습니다</div>}
       </div>
     </div>

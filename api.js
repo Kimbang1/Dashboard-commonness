@@ -42,6 +42,21 @@
     return mock;
   }
 
+  async function deleteService(id) {
+    var r = await fetch(API_BASE + "/api/services/" + encodeURIComponent(id), {
+      method: "DELETE",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    var body = null;
+    try { body = await r.json(); } catch (e) {}
+    if (!r.ok) {
+      throw new Error((body && body.error) || ("delete failed: HTTP " + r.status));
+    }
+    return body || { ok: true };
+  }
+
   window.WD_loadSnapshot = loadSnapshot;
+  window.WD_deleteService = deleteService;
   window.WD_API_BASE = API_BASE;
 })();

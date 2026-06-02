@@ -6,6 +6,7 @@
      GET  /api/snapshot        full aggregate (dashboard main)
      GET  /api/services        summary array
      GET  /api/services/:id    single service detail
+     DELETE /api/services/:id  remove service from registry
      POST /ingest/:id          push-mode telemetry intake
      GET  /healthz             collector self-health
 */
@@ -32,10 +33,41 @@ function loadRegistry() {
 
 let registry = loadRegistry();
 const pushed = {};            // id -> last pushed contract (push mode)
+let observedServiceIds = {};   // registry id -> latest telemetry service id
 let snapshot = emptySnapshot();
 
 function emptySnapshot() {
   return { services: [], errors: {}, feedback: {}, deploys: {}, generatedAt: Date.now() };
+}
+
+function saveRegistry() {
+  const body = JSON.stringify(registry, null, 2) + "\n";
+  const tmp = REGISTRY_PATH + ".tmp";
+  fs.writeFileSync(tmp, body, "utf8");
+  try {
+    fs.renameSync(tmp, REGISTRY_PATH);
+  } catch (e) {
+    try { fs.unlinkSync(tmp); } catch (_) {}
+    if (e.code === "EBUSY" || e.code === "EPERM" || e.code === "EXDEV") {
+      fs.writeFileSync(REGISTRY_PATH, body, "utf8");
+      return;
+    }
+    throw e;
+  }
+}
+
+function removeSnapshotService(id) {
+  snapshot.services = snapshot.services.filter((s) => s.id !== id);
+  delete snapshot.errors[id];
+  delete snapshot.feedback[id];
+  delete snapshot.deploys[id];
+  snapshot.generatedAt = Date.now();
+}
+
+function findRegistryIndexForService(id) {
+  let idx = registry.findIndex((entry) => entry.id === id);
+  if (idx !== -1) return idx;
+  return registry.findIndex((entry) => observedServiceIds[entry.id] === id);
 }
 
 // ---- fetch one service's telemetry (pull) with timeout ---------------------
@@ -103,6 +135,7 @@ function applyContract(snap, c) {
 // ---- one polling cycle -----------------------------------------------------
 async function poll() {
   const snap = emptySnapshot();
+  const nextObserved = {};
   await Promise.all(
     registry.map(async (entry) => {
       let contract;
@@ -117,11 +150,13 @@ async function poll() {
       } catch (e) {
         contract = unreachable(entry, e.message || "timeout");
       }
+      nextObserved[entry.id] = contract && contract.service && contract.service.id ? contract.service.id : entry.id;
       applyContract(snap, contract);
     })
   );
+  observedServiceIds = nextObserved;
   // keep registry order
-  const order = registry.map((e) => e.id);
+  const order = registry.map((e) => observedServiceIds[e.id] || e.id);
   snap.services.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   snapshot = snap;
 }
@@ -133,7 +168,7 @@ app.use(express.json({ limit: "1mb" }));
 // permissive CORS so the dashboard can sit on a different origin if needed
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
@@ -157,6 +192,36 @@ app.get("/api/services/:id", (req, res) => {
     feedback: snapshot.feedback[id] || [],
     deploys: snapshot.deploys[id] || [],
   });
+});
+
+app.delete("/api/services/:id", async (req, res) => {
+  const id = req.params.id;
+  const idx = findRegistryIndexForService(id);
+  if (idx === -1) return res.status(404).json({ error: "unknown service: " + id });
+
+  const [removed] = registry.splice(idx, 1);
+  const observedId = observedServiceIds[removed.id] || id;
+
+  try {
+    saveRegistry();
+  } catch (e) {
+    registry = loadRegistry();
+    return res.status(500).json({ error: "failed to save registry: " + e.message });
+  }
+
+  delete pushed[removed.id];
+  delete pushed[observedId];
+  delete observedServiceIds[removed.id];
+  removeSnapshotService(removed.id);
+  if (observedId !== removed.id) removeSnapshotService(observedId);
+
+  try {
+    await poll();
+  } catch (e) {
+    console.error("[collector] poll after delete failed:", e.message);
+  }
+
+  res.json({ ok: true, id, removedRegistryId: removed.id, count: registry.length });
 });
 
 // push-mode intake: a service sends its own unified contract

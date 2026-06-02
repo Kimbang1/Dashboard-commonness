@@ -239,7 +239,40 @@ WatchDocs 백엔드와 대시보드가 같은 `docker compose` 네트워크 안�
 http://<watchdocs-backend-service-name>:8000/telemetry
 ```
 
-## 9. 자주 생기는 문제
+## 9. 대시보드에서 안 쓰는 서비스 삭제하기
+
+대시보드 카드 우측 상단의 삭제 버튼을 누르면 확인 창이 뜹니다. `Delete`를 누르면 해당 서비스가 collector registry에서 제거되고 대시보드 목록에서도 바로 사라집니다.
+
+삭제 결과는 아래 파일에 반영됩니다.
+
+```text
+server/registry.json
+```
+
+Docker 실행 시 이 파일은 collector 컨테이너의 `/app/registry.json`에 연결되어 있으므로, 삭제 후 컨테이너를 재시작하거나 다시 빌드해도 제거된 서비스가 다시 나타나지 않습니다.
+
+삭제 후 GitHub에도 반영하려면 현재 대시보드 프로젝트 폴더에서 실행합니다.
+
+```powershell
+git status
+git add server/registry.json
+git commit -m "Remove unused services"
+git push origin main
+```
+
+삭제 API를 직접 호출해야 할 때:
+
+```powershell
+curl -X DELETE http://localhost:4000/api/services/<service-id>
+```
+
+예를 들어 대시보드에 표시된 서비스 ID가 `watchdocs-api`라면:
+
+```powershell
+curl -X DELETE http://localhost:4000/api/services/watchdocs-api
+```
+
+## 10. 자주 생기는 문제
 
 ### 포트가 이미 사용 중일 때
 

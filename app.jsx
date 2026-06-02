@@ -89,9 +89,40 @@ function BootScreen() {
   );
 }
 
+function DeleteServiceModal({ svc, busy, error, onCancel, onConfirm }) {
+  if (!svc) return null;
+  return (
+    <div className="wd-modal-backdrop" role="presentation" onClick={busy ? undefined : onCancel}>
+      <div className="wd-modal" role="dialog" aria-modal="true" aria-labelledby="wd-delete-title" onClick={(e) => e.stopPropagation()}>
+        <div className="wd-modal-kicker wd-label">REMOVE SERVICE</div>
+        <h2 id="wd-delete-title" className="wd-modal-title">Delete {svc.name}?</h2>
+        <p className="wd-modal-copy">
+          This will remove the service from the collector registry. It will disappear from the dashboard after the next snapshot refresh.
+        </p>
+        <div className="wd-modal-service wd-mono">
+          <span>{svc.id}</span>
+          <span>{svc.repo || "no repo"}</span>
+        </div>
+        {error && <div className="wd-modal-error wd-mono">{error}</div>}
+        <div className="wd-modal-actions">
+          <button className="wd-btn-sm" onClick={onCancel} disabled={busy}>Cancel</button>
+          <button className="wd-btn-danger" onClick={onConfirm} disabled={busy}>{busy ? "Deleting..." : "Delete"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [data, setData] = React.useState(null);
+  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [deleteBusy, setDeleteBusy] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState("");
+
+  const refreshData = React.useCallback(() => (
+    window.WD_loadSnapshot().then((d) => { if (d) setData(d); return d; })
+  ), []);
 
   // pull unified snapshot from collector (falls back to mock in api.js)
   React.useEffect(() => {
@@ -141,6 +172,40 @@ function App() {
 
   const openService = (id) => { setSelected(id); setView("detail"); window.scrollTo(0, 0); };
   const goHome = () => { setView("grid"); };
+  const requestRemoveService = (service) => {
+    setDeleteTarget(service);
+    setDeleteError("");
+  };
+  const cancelRemoveService = () => {
+    if (deleteBusy) return;
+    setDeleteTarget(null);
+    setDeleteError("");
+  };
+  const confirmRemoveService = async () => {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      await window.WD_deleteService(deleteTarget.id);
+      const next = await refreshData();
+      if (selected === deleteTarget.id || (next && !next.services.find((s) => s.id === selected))) {
+        setSelected(null);
+        setView("grid");
+      }
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteError(e.message || "Delete failed");
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (data && selected && !data.services.find((s) => s.id === selected)) {
+      setSelected(null);
+      setView("grid");
+    }
+  }, [data, selected]);
 
   // apply accent + density to :root
   React.useEffect(() => {
@@ -159,11 +224,12 @@ function App() {
       <TopBar services={data.services} view={view} onHome={goHome} clock={clock} connected={t.liveData} dataLive={!!data.__live} />
       <main className="wd-main">
         {view === "grid" ? (
-          <ServiceGrid services={data.services} onOpen={openService} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} />
+          <ServiceGrid services={data.services} onOpen={openService} onRemove={requestRemoveService} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} />
         ) : (
           svc && live && <DetailView svc={svc} data={data} onBack={goHome} live={live} />
         )}
       </main>
+      <DeleteServiceModal svc={deleteTarget} busy={deleteBusy} error={deleteError} onCancel={cancelRemoveService} onConfirm={confirmRemoveService} />
 
       <TweaksPanel>
         <TweakSection label="테마" />

@@ -136,15 +136,25 @@ html[data-density="compact"] .wd-main { padding: 16px; }
   display: flex; flex-direction: column; gap: 13px;
   padding: var(--pad); border-radius: var(--r);
   background: var(--bg-1); border: 1px solid var(--border);
+  cursor: pointer;
   transition: transform .16s ease, border-color .16s, box-shadow .16s;
 }
 .wd-card:hover { transform: translateY(-3px); border-color: var(--border-2); box-shadow: 0 14px 40px hsl(220 30% 2% / .6); }
+.wd-card:focus-visible { outline: 2px solid hsl(var(--ok-h) / .7); outline-offset: 2px; }
 .wd-card-glow { position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: .8; }
 .wd-card--healthy .wd-card-glow { opacity: .35; }
 .wd-card-head { display: flex; align-items: center; justify-content: space-between; }
 .wd-card-id { display: flex; align-items: center; gap: 9px; }
 .wd-card-name { font-size: 15px; font-weight: 500; color: var(--text); }
+.wd-card-actions { display: flex; align-items: center; gap: 9px; }
 .wd-card-status { font-size: 9.5px; }
+.wd-card-delete {
+  display: grid; place-items: center; width: 26px; height: 26px;
+  border-radius: 7px; color: var(--text-faint);
+  border: 1px solid transparent; transition: all .14s;
+}
+.wd-card-delete:hover { color: var(--crit); border-color: hsl(2 82% 62% / .35); background: var(--crit-dim); }
+.wd-card-delete:focus-visible { outline: 2px solid hsl(2 82% 62% / .65); outline-offset: 2px; }
 .wd-card-repo { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-faint); }
 .wd-card-spark { margin: 2px -2px; opacity: .9; }
 .wd-card-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 11px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -255,6 +265,38 @@ html[data-panel="filled"] .wd-panel { background: var(--bg-2); }
 .wd-btn-sm { padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 500; white-space: nowrap; color: var(--text-dim); background: var(--bg-3); border: 1px solid var(--border); transition: all .14s; }
 .wd-btn-sm:hover { color: var(--text); border-color: var(--border-2); }
 .wd-btn-mute { margin-left: auto; }
+.wd-btn-danger {
+  padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  color: var(--crit); background: var(--crit-dim); border: 1px solid hsl(2 82% 62% / .42);
+  transition: all .14s;
+}
+.wd-btn-danger:hover { background: hsl(2 82% 62% / .2); border-color: hsl(2 82% 62% / .65); }
+.wd-btn-sm:disabled, .wd-btn-danger:disabled { opacity: .55; cursor: not-allowed; }
+
+/* delete confirmation modal */
+.wd-modal-backdrop {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
+  padding: 20px; background: hsl(222 24% 4% / .72); backdrop-filter: blur(8px);
+}
+.wd-modal {
+  width: min(440px, 100%); padding: 20px; border-radius: var(--r);
+  background: var(--bg-1); border: 1px solid var(--border-2);
+  box-shadow: 0 24px 80px hsl(220 30% 2% / .7);
+}
+.wd-modal-kicker { color: var(--crit); margin-bottom: 8px; }
+.wd-modal-title { font-size: 20px; line-height: 1.2; letter-spacing: -.02em; }
+.wd-modal-copy { margin-top: 10px; color: var(--text-dim); font-size: 13px; }
+.wd-modal-service {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 14px; padding: 11px 12px;
+  border-radius: var(--r-sm); background: var(--bg); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 11.5px;
+}
+.wd-modal-error {
+  margin-top: 12px; padding: 10px 11px; border-radius: var(--r-sm);
+  color: var(--crit); background: var(--crit-dim); border: 1px solid hsl(2 82% 62% / .35);
+  font-size: 11.5px;
+}
+.wd-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
 /* feedback / VOC */
 .wd-voc-list { display: flex; flex-direction: column; }
