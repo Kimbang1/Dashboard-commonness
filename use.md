@@ -137,10 +137,10 @@ WatchDocs 프로젝트가 `/telemetry` API를 제공하도록 수정되어 있�
 현재 대시보드에는 아래 주소로 WatchDocs가 등록되어 있습니다.
 
 ```text
-http://host.docker.internal:8000/telemetry
+http://host.docker.internal:8001/telemetry
 ```
 
-이 주소는 Docker 컨테이너 안에서 로컬 PC의 WatchDocs FastAPI 백엔드를 읽을 때 사용하는 주소입니다.
+이 주소는 Docker 컨테이너 안에서 로컬 PC의 WatchDocs FastAPI 백엔드를 읽을 때 사용하는 주소입니다. `8000`번에 기존 서버가 떠 있어서 `/telemetry`가 404를 내면, 충돌을 피해서 `8001`번으로 실행합니다.
 
 ### 8-1. WatchDocs 백엔드 먼저 실행
 
@@ -155,13 +155,13 @@ $env:WATCHDOCS_CORS_ORIGINS="http://localhost:8080,http://127.0.0.1:8080"
 ```powershell
 cd C:\경로\watchDocs
 # 예: FastAPI 실행 명령
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 127.0.0.1 --port 8001
 ```
 
 실행 후 호스트에서 직접 확인:
 
 ```powershell
-curl http://localhost:8000/telemetry
+curl http://localhost:8001/telemetry
 ```
 
 JSON이 응답되면 WatchDocs 쪽 준비는 완료입니다.
@@ -192,13 +192,13 @@ docker compose logs -f collector
 WatchDocs 백엔드가 켜져 있는지 확인합니다.
 
 ```powershell
-curl http://localhost:8000/telemetry
+curl http://localhost:8001/telemetry
 ```
 
 Docker 컨테이너 안에서 로컬 백엔드에 접근해야 하므로 `server/registry.json`의 URL은 아래처럼 되어 있어야 합니다.
 
 ```json
-"telemetryUrl": "http://host.docker.internal:8000/telemetry"
+"telemetryUrl": "http://host.docker.internal:8001/telemetry"
 ```
 
 `server/registry.json`을 수정했다면 collector 이미지에 파일이 다시 들어가야 하므로 다시 빌드합니다.
@@ -215,10 +215,22 @@ docker compose up --build -d
 http://host.docker.internal:8000/telemetry
 ```
 
+8000번에 기존 서버가 떠 있어 404가 나면 현재 로컬 설정처럼 8001번을 씁니다.
+
+```text
+http://host.docker.internal:8001/telemetry
+```
+
 호스트 브라우저나 PowerShell에서 직접 확인하는 경우:
 
 ```text
 http://localhost:8000/telemetry
+```
+
+8001번으로 실행했다면:
+
+```text
+http://localhost:8001/telemetry
 ```
 
 WatchDocs 백엔드와 대시보드가 같은 `docker compose` 네트워크 안에 있는 경우:

@@ -9,7 +9,7 @@
     "region": "local",
     "version": "local",
     "versionState": "deployed",
-    "telemetryUrl": "http://host.docker.internal:8000/telemetry",
+    "telemetryUrl": "http://host.docker.internal:8001/telemetry",
     "demo": false
   },
   {
