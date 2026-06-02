@@ -1,0 +1,8 @@
+# 빌드 산출물 / 불필요 파일은 이미지에서 제외
+screenshots/
+*.napkin
+scraps/
+.git/
+.gitignore
+DOCKER.md
+README*.md

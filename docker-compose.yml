@@ -1,0 +1,25 @@
+services:
+  # 수집기 — 등록된 서비스들의 telemetry를 폴링/수집해 대시보드 API 제공
+  collector:
+    build: ./server
+    image: watchdocs-collector
+    container_name: watchdocs-collector
+    environment:
+      - PORT=4000
+      - POLL_MS=5000
+    expose:
+      - "4000"
+    ports:
+      - "4000:4000"        # 직접 디버깅용 (http://localhost:4000/healthz)
+    restart: unless-stopped
+
+  # 대시보드 — nginx 정적 서빙 + /api 를 collector로 프록시
+  dashboard:
+    build: .
+    image: watchdocs-dashboard
+    container_name: watchdocs-dashboard
+    depends_on:
+      - collector
+    ports:
+      - "8080:80"
+    restart: unless-stopped

@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+server/node_modules/
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# env / secrets (GitHub 토큰 등)
+.env
+.env.local
+*.local
+
+# build / runtime
+dist/
