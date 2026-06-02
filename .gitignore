@@ -19,3 +19,7 @@ Thumbs.db
 
 # build / runtime
 dist/
+
+# local service registry
+server/registry.json
+server/registry.json.tmp

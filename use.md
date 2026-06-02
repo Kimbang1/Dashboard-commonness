@@ -11,6 +11,12 @@ git clone https://github.com/Kimbang1/Dashboard-commonness.git
 cd Dashboard-commonness
 ```
 
+서비스 등록 목록은 로컬 전용 파일입니다. 처음 받은 환경에서 파일이 없다면 예시 파일을 복사해서 만듭니다.
+
+```powershell
+Copy-Item server/registry.example.json server/registry.json
+```
+
 ## 2. Docker로 실행하기
 
 Docker와 Docker Compose가 설치되어 있어야 합니다.
@@ -201,10 +207,10 @@ Docker 컨테이너 안에서 로컬 백엔드에 접근해야 하므로 `server
 "telemetryUrl": "http://host.docker.internal:8001/telemetry"
 ```
 
-`server/registry.json`을 수정했다면 collector 이미지에 파일이 다시 들어가야 하므로 다시 빌드합니다.
+`server/registry.json`을 수정했다면 collector가 다시 읽도록 reload를 호출합니다.
 
 ```powershell
-docker compose up --build -d
+curl -X POST http://localhost:4000/admin/reload
 ```
 
 ### 8-4. 상황별 telemetry URL
@@ -251,12 +257,14 @@ server/registry.json
 
 Docker 실행 시 이 파일은 collector 컨테이너의 `/app/registry.json`에 연결되어 있으므로, 삭제 후 컨테이너를 재시작하거나 다시 빌드해도 제거된 서비스가 다시 나타나지 않습니다.
 
-삭제 후 GitHub에도 반영하려면 현재 대시보드 프로젝트 폴더에서 실행합니다.
+`server/registry.json`은 로컬 전용 파일입니다. 등록한 서비스 목록이나 삭제 내역은 GitHub에 올리지 않습니다.
+
+GitHub에는 기능 코드와 예시 파일만 올립니다.
 
 ```powershell
 git status
-git add server/registry.json
-git commit -m "Remove unused services"
+git add .gitignore docker-compose.yml server/Dockerfile server/registry.example.json
+git commit -m "Keep service registry local"
 git push origin main
 ```
 

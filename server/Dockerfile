@@ -6,7 +6,8 @@ COPY package.json ./
 RUN npm install --omit=dev
 
 # 소스
-COPY collector.js synth.js registry.json ./
+COPY collector.js synth.js registry.example.json ./
+RUN cp registry.example.json registry.json
 
 ENV PORT=4000 POLL_MS=5000
 EXPOSE 4000

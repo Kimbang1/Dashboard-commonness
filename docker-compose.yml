@@ -7,8 +7,9 @@ services:
     environment:
       - PORT=4000
       - POLL_MS=5000
+      - REGISTRY_PATH=/app/data/registry.json
     volumes:
-      - ./server/registry.json:/app/registry.json
+      - ./server:/app/data
     expose:
       - "4000"
     ports:
