@@ -1,5 +1,18 @@
 [
   {
+    "id": "watchdocs",
+    "title": "WatchDocs",
+    "repo": "Kimbang1/watchDocs",
+    "lang": "Python",
+    "langColor": "#3572A5",
+    "env": "local",
+    "region": "local",
+    "version": "local",
+    "versionState": "deployed",
+    "telemetryUrl": "http://host.docker.internal:8000/telemetry",
+    "demo": false
+  },
+  {
     "id": "media-cdn",
     "title": "Media CDN",
     "repo": "watchdocs/media-cdn",
